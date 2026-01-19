@@ -1,0 +1,139 @@
+
+version: "3.9"
+
+services:
+  # MongoDB Primary (server-a)
+  mongo-primary:
+    image: mongo:8.0
+    hostname: mongo-primary
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    environment:
+      MONGO_INITDB_DATABASE: art_retrainer
+    volumes:
+      - mongo_primary_data:/data/db
+      - mongo_keyfile:/etc/mongo-keyfile:ro
+    configs:
+      - source: mongo_keyfile
+        target: /etc/mongo-keyfile
+        mode: 0400
+    healthcheck:
+      test: |
+        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == server-b
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # MongoDB Secondary 1 (server-b)
+  mongo-secondary1:
+    image: mongo:8.0
+    hostname: mongo-secondary1
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    volumes:
+      - mongo_secondary1_data:/data/db
+      - mongo_keyfile:/etc/mongo-keyfile:ro
+    configs:
+      - source: mongo_keyfile
+        target: /etc/mongo-keyfile
+        mode: 0400
+    healthcheck:
+      test: |
+        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == server-c
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # MongoDB Secondary 2 (server-c)
+  mongo-secondary2:
+    image: mongo:8.0
+    hostname: mongo-secondary2
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    volumes:
+      - mongo_secondary2_data:/data/db
+      - mongo_keyfile:/etc/mongo-keyfile:ro
+    configs:
+      - source: mongo_keyfile
+        target: /etc/mongo-keyfile
+        mode: 0400
+    healthcheck:
+      test: |
+        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == server-d
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # MongoDB Replica Set Initializer (runs once)
+  mongo-init:
+    image: mongo:8.0
+    command: |
+      bash -c '
+        echo "Waiting for MongoDB instances..."
+        sleep 30
+        
+        echo "Initializing replica set..."
+        mongosh --host mongo-primary:27017 --eval "
+          try {
+            rs.status();
+            print(\"Replica set already initialized\");
+          } catch(e) {
+            print(\"Initializing replica set...\");
+            rs.initiate({
+              _id: \"rs0\",
+              members: [
+                { _id: 0, host: \"mongo-primary:27017\", priority: 2 },
+                { _id: 1, host: \"mongo-secondary1:27017\", priority: 1 },
+                { _id: 2, host: \"mongo-secondary2:27017\", priority: 1 }
+              ]
+            });
+            print(\"Replica set initialized\");
+          }
+        "
+        
+        echo "Waiting for primary election..."
+        sleep 10
+        
+        echo "Replica set status:"
+        mongosh --host server-b:27017 --eval "rs.status()"
+      '
+    networks:
+      - internal
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      placement:
+        constraints:
+          - node.hostname == server-a
