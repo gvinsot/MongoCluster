@@ -4,7 +4,7 @@ version: "3.9"
 services:
   # MongoDB Primary (server-a)
   mongo-primary:
-    image: mongo:8.0
+    image: mongo:8.2
     hostname: mongo-primary
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
     environment:
@@ -37,7 +37,7 @@ services:
 
   # MongoDB Secondary 1 (server-b)
   mongo-secondary1:
-    image: mongo:8.0
+    image: mongo:8.2
     hostname: mongo-secondary1
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
     volumes:
@@ -68,7 +68,7 @@ services:
 
   # MongoDB Secondary 2 (server-c)
   mongo-secondary2:
-    image: mongo:8.0
+    image: mongo:8.2
     hostname: mongo-secondary2
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
     volumes:
@@ -99,7 +99,7 @@ services:
 
   # MongoDB Replica Set Initializer (runs once)
   mongo-init:
-    image: mongo:8.0
+    image: mongo:8.2
     command: |
       bash -c '
         echo "Waiting for MongoDB instances to be reachable..."
