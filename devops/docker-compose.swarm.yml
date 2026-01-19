@@ -30,7 +30,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.hostname == server-b
+          - node.hostname == server-z
       restart_policy:
         condition: on-failure
         delay: 5s
