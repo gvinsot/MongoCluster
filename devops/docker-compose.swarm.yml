@@ -14,6 +14,8 @@ services:
     configs:
       - source: mongo_keyfile
         target: /etc/mongo-keyfile
+        uid: "999"
+        gid: "999"
         mode: 0400
     healthcheck:
       test: |
@@ -43,6 +45,8 @@ services:
     configs:
       - source: mongo_keyfile
         target: /etc/mongo-keyfile
+        uid: "999"
+        gid: "999"
         mode: 0400
     healthcheck:
       test: |
@@ -72,6 +76,8 @@ services:
     configs:
       - source: mongo_keyfile
         target: /etc/mongo-keyfile
+        uid: "999"
+        gid: "999"
         mode: 0400
     healthcheck:
       test: |
@@ -96,8 +102,29 @@ services:
     image: mongo:8.0
     command: |
       bash -c '
-        echo "Waiting for MongoDB instances..."
-        sleep 30
+        echo "Waiting for MongoDB instances to be reachable..."
+        
+        # Wait for mongo-primary to be available (up to 2 minutes)
+        for i in $(seq 1 24); do
+          if mongosh --host mongo-primary:27017 --eval "db.adminCommand(\"ping\")" --quiet 2>/dev/null; then
+            echo "mongo-primary is reachable!"
+            break
+          fi
+          echo "Attempt $i/24: mongo-primary not ready, waiting 5s..."
+          sleep 5
+        done
+        
+        # Wait for secondaries
+        for host in mongo-secondary1 mongo-secondary2; do
+          for i in $(seq 1 12); do
+            if mongosh --host $host:27017 --eval "db.adminCommand(\"ping\")" --quiet 2>/dev/null; then
+              echo "$host is reachable!"
+              break
+            fi
+            echo "Waiting for $host... ($i/12)"
+            sleep 5
+          done
+        done
         
         echo "Initializing replica set..."
         mongosh --host mongo-primary:27017 --eval "
@@ -122,7 +149,7 @@ services:
         sleep 10
         
         echo "Replica set status:"
-        mongosh --host server-b:27017 --eval "rs.status()"
+        mongosh --host mongo-primary:27017 --eval "rs.status()"
       '
     networks:
       - internal
