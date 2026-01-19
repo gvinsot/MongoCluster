@@ -100,57 +100,57 @@ services:
   # MongoDB Replica Set Initializer (runs once)
   mongo-init:
     image: mongo:8.2
-    command: |
-      bash -c '
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
         echo "Waiting for MongoDB instances to be reachable..."
         
         # Wait for mongo-primary to be available (up to 2 minutes)
-        for i in $(seq 1 24); do
-          if mongosh --host mongo-primary:27017 --eval "db.adminCommand(\"ping\")" --quiet 2>/dev/null; then
+        for i in $$(seq 1 24); do
+          if mongosh --host mongo-primary:27017 --eval "db.adminCommand('ping')" --quiet 2>/dev/null; then
             echo "mongo-primary is reachable!"
             break
           fi
-          echo "Attempt $i/24: mongo-primary not ready, waiting 5s..."
+          echo "Attempt $$i/24: mongo-primary not ready, waiting 5s..."
           sleep 5
         done
         
         # Wait for secondaries
-        for host in mongo-secondary1 mongo-secondary2; do
-          for i in $(seq 1 12); do
-            if mongosh --host $host:27017 --eval "db.adminCommand(\"ping\")" --quiet 2>/dev/null; then
-              echo "$host is reachable!"
+        for h in mongo-secondary1 mongo-secondary2; do
+          for j in $$(seq 1 12); do
+            if mongosh --host $$h:27017 --eval "db.adminCommand('ping')" --quiet 2>/dev/null; then
+              echo "$$h is reachable!"
               break
             fi
-            echo "Waiting for $host... ($i/12)"
+            echo "Waiting for $$h... ($$j/12)"
             sleep 5
           done
         done
         
         echo "Initializing replica set..."
-        mongosh --host mongo-primary:27017 --eval "
+        mongosh --host mongo-primary:27017 --eval '
           try {
             rs.status();
-            print(\"Replica set already initialized\");
+            print("Replica set already initialized");
           } catch(e) {
-            print(\"Initializing replica set...\");
+            print("Initializing replica set...");
             rs.initiate({
-              _id: \"rs0\",
+              _id: "rs0",
               members: [
-                { _id: 0, host: \"mongo-primary:27017\", priority: 2 },
-                { _id: 1, host: \"mongo-secondary1:27017\", priority: 1 },
-                { _id: 2, host: \"mongo-secondary2:27017\", priority: 1 }
+                { _id: 0, host: "mongo-primary:27017", priority: 2 },
+                { _id: 1, host: "mongo-secondary1:27017", priority: 1 },
+                { _id: 2, host: "mongo-secondary2:27017", priority: 1 }
               ]
             });
-            print(\"Replica set initialized\");
+            print("Replica set initialized");
           }
-        "
+        '
         
         echo "Waiting for primary election..."
         sleep 10
         
         echo "Replica set status:"
         mongosh --host mongo-primary:27017 --eval "rs.status()"
-      '
     networks:
       - internal
     deploy:
