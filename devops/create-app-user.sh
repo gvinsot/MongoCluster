@@ -79,12 +79,25 @@ fi
 
 echo -e "${BLUE}Creating user '${USERNAME}' on database '${DATABASE}'...${NC}"
 
-# Create the user using a temporary container on the same network
+# Create the database (if needed) and user using a temporary container on the same network
 RESULT=$(docker run --rm --network mongocluster_internal mongo:8.2 \
     mongosh --host mongo-primary:27017 --quiet \
     -u "$MONGO_ADMIN_USER" -p "$MONGO_ADMIN_PASSWORD" --authenticationDatabase admin \
     --eval "
         db = db.getSiblingDB('${DATABASE}');
+        
+        // Create the database by inserting an init document (if it doesn't exist)
+        const dbList = db.adminCommand({ listDatabases: 1 }).databases.map(d => d.name);
+        if (!dbList.includes('${DATABASE}')) {
+            db.getCollection('_init').insertOne({ 
+                _id: 'init', 
+                created: new Date(), 
+                createdBy: 'create-app-user.sh' 
+            });
+            print('DATABASE_CREATED');
+        }
+        
+        // Create the user
         try {
             db.createUser({
                 user: '${USERNAME}',
@@ -105,6 +118,12 @@ RESULT=$(docker run --rm --network mongocluster_internal mongo:8.2 \
 
 if echo "$RESULT" | grep -q "SUCCESS"; then
     echo -e "${GREEN}User created successfully!${NC}"
+    
+    # Check if database was also created
+    if echo "$RESULT" | grep -q "DATABASE_CREATED"; then
+        echo -e "${GREEN}Database '${DATABASE}' created${NC}"
+    fi
+    
     echo ""
     echo "User details:"
     echo "  Database: ${DATABASE}"
