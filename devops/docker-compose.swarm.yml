@@ -187,8 +187,8 @@ services:
         # Définir le port du service mongo-express
         - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
         
-        # Middleware: Whitelist IPs locales uniquement
-        - "traefik.http.middlewares.mongo-local-only.ipwhitelist.sourcerange=127.0.0.1/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+        # Middleware: Autoriser uniquement les IPs locales
+        - "traefik.http.middlewares.mongo-local-only.ipallowlist.sourcerange=127.0.0.1/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         
         # Router HTTPS (principal) - MongoDB Admin
         - "traefik.http.routers.mongo-express.rule=Host(`mongo.methodinfo.fr`)"
