@@ -61,48 +61,28 @@ if [ -z "$DATABASE" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
     exit 1
 fi
 
-# Find the primary container
-PRIMARY_CONTAINER=$(docker ps -qf "name=mongocluster_mongo-primary" 2>/dev/null | head -1)
+# Check if mongo-primary service is running
+if ! docker service ls --filter "name=mongocluster_mongo-primary" --format "{{.Replicas}}" 2>/dev/null | grep -q "1/1"; then
+    echo -e "${RED}Error: MongoDB primary service is not running${NC}"
+    echo "Make sure the MongoDB cluster is deployed and running."
+    echo ""
+    echo "Check status: docker service ls --filter name=mongocluster"
+    exit 1
+fi
 
-if [ -z "$PRIMARY_CONTAINER" ]; then
-    echo -e "${RED}Error: MongoDB primary container not found${NC}"
-    echo "Make sure the MongoDB cluster is running."
+# Check if the overlay network exists
+if ! docker network ls --filter "name=mongocluster_internal" --format "{{.Name}}" 2>/dev/null | grep -q "mongocluster_internal"; then
+    echo -e "${RED}Error: MongoDB network 'mongocluster_internal' not found${NC}"
+    echo "Make sure the MongoDB cluster is deployed."
     exit 1
 fi
 
 echo -e "${BLUE}Creating user '${USERNAME}' on database '${DATABASE}'...${NC}"
 
-# Create the user
-docker exec "$PRIMARY_CONTAINER" mongosh \
-    --quiet \
-    -u "$MONGO_ADMIN_USER" \
-    -p "$MONGO_ADMIN_PASSWORD" \
-    --authenticationDatabase admin \
-    --eval "
-        db = db.getSiblingDB('${DATABASE}');
-        try {
-            db.createUser({
-                user: '${USERNAME}',
-                pwd: '${PASSWORD}',
-                roles: [
-                    { role: '${ROLE}', db: '${DATABASE}' }
-                ]
-            });
-            print('SUCCESS');
-        } catch(e) {
-            if (e.code === 51003) {
-                print('EXISTS');
-            } else {
-                print('ERROR: ' + e.message);
-            }
-        }
-    " 2>/dev/null
-
-RESULT=$(docker exec "$PRIMARY_CONTAINER" mongosh \
-    --quiet \
-    -u "$MONGO_ADMIN_USER" \
-    -p "$MONGO_ADMIN_PASSWORD" \
-    --authenticationDatabase admin \
+# Create the user using a temporary container on the same network
+RESULT=$(docker run --rm --network mongocluster_internal mongo:8.2 \
+    mongosh --host mongo-primary:27017 --quiet \
+    -u "$MONGO_ADMIN_USER" -p "$MONGO_ADMIN_PASSWORD" --authenticationDatabase admin \
     --eval "
         db = db.getSiblingDB('${DATABASE}');
         try {
@@ -138,8 +118,14 @@ elif echo "$RESULT" | grep -q "EXISTS"; then
     echo -e "${YELLOW}User '${USERNAME}' already exists on database '${DATABASE}'${NC}"
     echo ""
     echo "Connection string:"
-    echo -e "  mongodb://${USERNAME}:<password>@mongo-primary:27017,mongo-secondary1:27017,mongo-secondary2:27017/${DATABASE}?replicaSet=rs0&authSource=${DATABASE}"
+    echo "  mongodb://${USERNAME}:<password>@mongo-primary:27017,mongo-secondary1:27017,mongo-secondary2:27017/${DATABASE}?replicaSet=rs0&authSource=${DATABASE}"
     echo ""
+elif echo "$RESULT" | grep -q "Authentication failed"; then
+    echo -e "${RED}Authentication failed${NC}"
+    echo "Check that MONGO_ADMIN_USER and MONGO_ADMIN_PASSWORD are correct in .env"
+    echo ""
+    echo "Current admin user: ${MONGO_ADMIN_USER}"
+    exit 1
 else
     echo -e "${RED}Failed to create user${NC}"
     echo "$RESULT"
