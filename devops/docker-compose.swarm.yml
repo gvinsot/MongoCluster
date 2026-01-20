@@ -184,20 +184,23 @@ services:
         # Activer Traefik
         - "traefik.enable=true"
         
-        # Définir le port du service
-        - "traefik.http.services.art-retrainer-mongo.loadbalancer.server.port=8081"
+        # Définir le port du service mongo-express
+        - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
+        
+        # Middleware: Whitelist IPs locales uniquement
+        - "traefik.http.middlewares.mongo-local-only.ipwhitelist.sourcerange=127.0.0.1/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
         
         # Router HTTPS (principal) - MongoDB Admin
-        - "traefik.http.routers.art-retrainer-mongo.rule=Host(`mongo.methodinfo.fr`)"
-        - "traefik.http.routers.art-retrainer-mongo.entrypoints=websecure"
-        - "traefik.http.routers.art-retrainer-mongo.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.art-retrainer-mongo.middlewares=global@file"
+        - "traefik.http.routers.mongo-express.rule=Host(`mongo.methodinfo.fr`)"
+        - "traefik.http.routers.mongo-express.entrypoints=websecure"
+        - "traefik.http.routers.mongo-express.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.mongo-express.middlewares=mongo-local-only,global@file"
         
         # Router HTTP (redirige vers HTTPS)
-        - "traefik.http.routers.art-retrainer-mongo-http.rule=Host(`mongo.methodinfo.fr`)"
-        - "traefik.http.routers.art-retrainer-mongo-http.entrypoints=web"
-        - "traefik.http.routers.art-retrainer-mongo-http.middlewares=redirect-to-https@file"
-        - "traefik.http.routers.art-retrainer-mongo-http.service=noop@internal"
+        - "traefik.http.routers.mongo-express-http.rule=Host(`mongo.methodinfo.fr`)"
+        - "traefik.http.routers.mongo-express-http.entrypoints=web"
+        - "traefik.http.routers.mongo-express-http.middlewares=redirect-to-https@file"
+        - "traefik.http.routers.mongo-express-http.service=noop@internal"
       restart_policy:
         condition: on-failure
 
