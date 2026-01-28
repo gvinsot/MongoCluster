@@ -180,6 +180,9 @@ services:
       - internal
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.label != gpu
       labels:
         # Activer Traefik
         - "traefik.enable=true"
