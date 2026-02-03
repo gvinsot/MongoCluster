@@ -57,7 +57,7 @@ fi
 
 # Function to check if authentication is currently disabled in compose file
 is_auth_disabled() {
-    grep -q 'command: \["mongod", "--replSet", "rs0", "--bind_ip_all"\]' "$COMPOSE_FILE" 2>/dev/null
+    grep -q 'command: \["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet", "--setParameter", "diagnosticDataCollectionDirectorySizeMB=0"\]' "$COMPOSE_FILE" 2>/dev/null
     return $?
 }
 
@@ -116,7 +116,7 @@ enable_auth_in_compose() {
     echo -e "${BLUE}Enabling authentication in docker-compose.swarm.yml...${NC}"
     
     # Replace the no-auth command with the auth command for all mongo services
-    sed -i 's|command: \["mongod", "--replSet", "rs0", "--bind_ip_all"\]|command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]|g' "$COMPOSE_FILE"
+    sed -i 's|command: \["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet", "--setParameter", "diagnosticDataCollectionDirectorySizeMB=0"\]|command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet", "--setParameter", "diagnosticDataCollectionDirectorySizeMB=0"]|g' "$COMPOSE_FILE"
     
     # Comment out the old line marker if present
     sed -i 's|# Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile|# Authentication enabled|g' "$COMPOSE_FILE"
