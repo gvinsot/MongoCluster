@@ -216,6 +216,28 @@ docker exec -i $(docker ps -qf "name=mongo-primary") \
   mongorestore --archive --gzip < backup-20240120.archive
 ```
 
+## Logging Configuration
+
+MongoDB instances are configured with reduced log verbosity to minimize unnecessary output:
+
+- **Quiet mode**: `--quiet` flag reduces verbose logging
+- **Diagnostic collection disabled**: `diagnosticDataCollectionDirectorySizeMB=0` prevents excessive diagnostic logs
+
+This configuration reduces common logs such as:
+- Client metadata connection logs (NETWORK component, log ID 51800)
+- Diagnostic data collection messages
+- Other verbose informational messages
+
+To view service logs:
+
+```bash
+# View logs from primary
+docker service logs mongocluster_mongo-primary
+
+# View logs from a specific container
+docker logs $(docker ps -qf "name=mongo-primary")
+```
+
 ## Troubleshooting
 
 ### Service Won't Start
