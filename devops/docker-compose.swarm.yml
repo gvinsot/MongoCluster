@@ -7,8 +7,9 @@ services:
     image: mongo:8.2
     hostname: mongo-primary
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
     environment:
       MONGO_INITDB_DATABASE: art_retrainer
     volumes:
@@ -42,8 +43,9 @@ services:
     image: mongo:8.2
     hostname: mongo-secondary1
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
     volumes:
       - mongo_secondary1_data:/data/db
     configs:
@@ -75,8 +77,9 @@ services:
     image: mongo:8.2
     hostname: mongo-secondary2
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile"]
+    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
     volumes:
       - mongo_secondary2_data:/data/db
     configs:
