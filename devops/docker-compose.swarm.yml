@@ -7,9 +7,9 @@ services:
     image: mongo:8.2
     hostname: mongo-primary
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
+    # --logLevel 1 = WARNING seulement (pas INFO), réduit les logs réseau/WiredTiger
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--logLevel", "1"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--logLevel", "1"]
     environment:
       MONGO_INITDB_DATABASE: art_retrainer
     volumes:
@@ -43,9 +43,9 @@ services:
     image: mongo:8.2
     hostname: mongo-secondary1
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
+    # --logLevel 1 = WARNING seulement (pas INFO), réduit les logs réseau/WiredTiger
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--logLevel", "1"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--logLevel", "1"]
     volumes:
       - mongo_secondary1_data:/data/db
     configs:
@@ -77,9 +77,9 @@ services:
     image: mongo:8.2
     hostname: mongo-secondary2
     # Phase 1: Sans auth pour init. Phase 2: Décommenter --keyFile
-    # Ajout de --quiet pour réduire les logs réseau (Connection ended, etc.)
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--quiet"]
-    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--quiet"]
+    # --logLevel 1 = WARNING seulement (pas INFO), réduit les logs réseau/WiredTiger
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--logLevel", "1"]
+    # command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/etc/mongo-keyfile", "--logLevel", "1"]
     volumes:
       - mongo_secondary2_data:/data/db
     configs:
