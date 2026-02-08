@@ -20,13 +20,6 @@ services:
         uid: "999"
         gid: "999"
         mode: 0400
-    healthcheck:
-      test: |
-        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     networks:
       - internal
     deploy:
@@ -54,13 +47,6 @@ services:
         uid: "999"
         gid: "999"
         mode: 0400
-    healthcheck:
-      test: |
-        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     networks:
       - internal
     deploy:
@@ -88,13 +74,6 @@ services:
         uid: "999"
         gid: "999"
         mode: 0400
-    healthcheck:
-      test: |
-        mongosh --eval "try { rs.status().ok } catch(e) { db.adminCommand('ping').ok }" --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     networks:
       - internal
     deploy:
